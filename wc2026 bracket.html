@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 FIFA World Cup &#8212; Bracket Simulator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a1628;color:#e8eaf0;min-height:100vh;padding:20px 12px}
+h1{text-align:center;font-size:clamp(1.2rem,5vw,1.6rem);color:#f5c518;margin-bottom:6px;letter-spacing:0.5px}
+.subtitle{text-align:center;color:#8899aa;font-size:clamp(0.75rem,3vw,0.88rem);margin-bottom:20px}
+
+.top-nav{display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:16px;max-width:560px;margin-left:auto;margin-right:auto}
+.nav-btn{border:1px solid #3a4a60;background:#1a2840;color:#8899aa;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:0.78rem;font-family:inherit;transition:background 0.15s;text-decoration:none}
+.nav-btn:hover{background:#243855;color:#e8eaf0}
+.nav-btn.active{background:#f5c518;color:#0a1628;border-color:#f5c518;font-weight:700}
+.notice{background:#1a2010;border:1px solid #4a5a20;border-radius:8px;padding:10px 14px;font-size:0.8rem;color:#aabb88;margin:0 auto 20px auto;max-width:560px;line-height:1.5}
+/* Team select screen */
+.search-bar{position:relative;max-width:560px;margin:0 auto 12px auto}
+.search-bar input{width:100%;padding:12px 16px 12px 40px;font-size:1rem;background:#1a2840;color:#e8eaf0;border:1px solid #3a4a60;border-radius:8px;outline:none;font-family:inherit}
+.search-bar input:focus{border-color:#f5c518}
+.search-bar input::placeholder{color:#556677}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#556677;pointer-events:none;font-size:15px}
+.teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;max-width:560px;margin:0 auto}
+.team-btn{padding:10px 12px;border:1px solid #2a3a55;border-radius:8px;background:#1a2840;cursor:pointer;font-size:0.88rem;color:#e8eaf0;display:flex;align-items:center;gap:8px;text-align:left;width:100%;font-family:inherit;transition:background 0.15s,border-color 0.15s}
+.team-btn:hover{background:#243855;border-color:#3a4a60}
+/* Bracket screen */
+.bracket-view{display:none;max-width:560px;margin:0 auto}
+.bracket-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.hdr-btn{border:1px solid #3a4a60;background:#1a2840;color:#8899aa;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:0.85rem;font-family:inherit;transition:background 0.15s}
+.hdr-btn:hover{background:#243855;color:#e8eaf0}
+.bracket-team-title{font-size:1.1rem;font-weight:700;color:#f5c518;flex:1}
+/* Round label */
+.round-label{font-size:0.7rem;font-weight:700;color:#8899aa;text-transform:uppercase;letter-spacing:0.08em;margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid #1e2e44}
+/* Stage prompt */
+.stage-prompt{font-size:0.85rem;color:#c0ccd8;margin-bottom:10px;line-height:1.6;padding:10px 14px;background:#0f1e30;border-left:3px solid #f5c518;border-radius:0 8px 8px 0}
+.stage-prompt strong{color:#f5c518}
+.stage-prompt.tbd-prompt{border-left-color:#aaaacc}
+.stage-prompt.tbd-prompt strong{color:#ccccee}
+/* Match cards */
+.match-card{border:1px solid #2a3a55;border-radius:10px;background:#1a2840;margin-bottom:8px;overflow:hidden}
+.match-card.highlight{border-color:#f5c518;background:#1a2010}
+.match-card.tbd-card{border:1px dashed #3a4a60;background:#111e30}
+.match-info{padding:6px 14px;background:#0f1e30;font-size:0.72rem;color:#556677;border-bottom:1px solid #1e2e44}
+.highlight .match-info{background:#0f1a08;border-bottom-color:#2a3a10;color:#8899aa}
+.tbd-card .match-info{background:#0d1a28;border-bottom-color:#1e2e44;border-style:none none solid none}
+/* Team rows */
+.team-row{padding:11px 14px;display:flex;align-items:center;gap:10px;border:none;border-top:1px solid #1e2e44;width:100%;text-align:left;background:transparent;font-family:inherit;font-size:0.92rem;color:#e8eaf0}
+.team-row:first-of-type{border-top:none}
+.team-row.pickable{cursor:pointer;transition:background 0.1s}
+.team-row.pickable:hover{background:#243855}
+.highlight .team-row.pickable:hover{background:#1e2e10}
+.tbd-card .team-row.pickable:hover{background:#1a2840}
+.team-row.selected{background:#1a2e10 !important;border-left:3px solid #f5c518}
+.team-row.selected .tname{color:#f5c518;font-weight:600}
+.team-row.eliminated{opacity:0.3;pointer-events:none}
+.team-row.followed{background:#0f1e30 !important;border-left:3px solid #66cc88}
+.team-row.followed .tname{color:#88ddaa}
+.row-flag{font-size:20px;flex-shrink:0}
+.tname{flex:1}
+.phint{font-size:0.72rem;color:#556677;margin-left:auto;white-space:nowrap}
+.team-row.selected .phint{color:#f5c518}
+.team-row.followed .phint{color:#66cc88}
+/* Champion banner */
+.champion-banner{text-align:center;padding:2rem 1rem;border:1px solid #f5c518;border-radius:12px;background:#0f1a08;margin-bottom:14px}
+.champion-flag{font-size:52px;margin-bottom:10px}
+.champion-name{font-size:1.5rem;font-weight:700;color:#f5c518;margin-bottom:4px}
+.champion-sub{font-size:0.85rem;color:#8899aa}
+/* Eliminated */
+.elim-card{background:#2a1010;border:1px solid #cc3333;border-radius:10px;padding:14px 16px;margin-bottom:12px;text-align:center}
+.elim-card p{font-size:0.88rem;color:#ffaaaa;margin-bottom:10px}
+.elim-btn{background:#f5c518;color:#0a1628;border:none;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:0.88rem;font-weight:700;font-family:inherit;width:auto}
+.elim-btn:hover{background:#ffd740}
+/* Connector */
+.connector{text-align:center;font-size:0.78rem;color:#3a4a60;padding:3px 0 5px;letter-spacing:0.03em}
+</style>
+</head>
+<body>
+
+<h1>&#x26BD; FIFA World Cup 2026</h1>
+<p class="subtitle">Bracket Simulator &mdash; pick a team and predict their path to the final</p>
+
+
+<div class="top-nav">
+  <button class="nav-btn" onclick="window.location.href='index.html'">&#x2302; Home</button>
+  <button class="nav-btn active">Team Path View</button>
+  <button class="nav-btn" onclick="window.location.href='wc2026 team stats.html'">&#x1F4CA; Team Stats</button>
+  <button class="nav-btn" onclick="window.location.href='wc2026 visual bracket.html'">Visual Bracket &#8594;</button>
+</div>
+<div id="team-select">
+  <div class="search-bar">
+    <span class="search-icon">&#128269;</span>
+    <input type="text" id="search" placeholder="Search teams...">
+  </div>
+  <div class="teams-grid" id="teams-grid"></div>
+</div>
+
+<div class="bracket-view" id="bracket-view">
+  <div class="bracket-header">
+    <button class="hdr-btn" onclick="window.location.href='index.html'">&#x2302; Home</button>
+  <button class="hdr-btn" id="back-btn">&larr; All teams</button>
+    <span id="bracket-title" class="bracket-team-title"></span>
+    <button class="hdr-btn" id="reset-btn">Reset picks</button>
+  </div>
+  <div id="bracket-content"></div>
+</div>
+
+<script>
+var FLAGS={
+  "Mexico":"&#127474;&#127485;","South Africa":"&#127487;&#127462;","Switzerland":"&#127464;&#127469;",
+  "Canada":"&#127464;&#127462;","Bosnia and Herzegovina":"&#127463;&#127462;","Brazil":"&#127463;&#127479;",
+  "Morocco":"&#127474;&#127462;","United States":"&#127482;&#127480;","Germany":"&#127465;&#127466;",
+  "Ivory Coast":"&#127464;&#127470;","Ecuador":"&#127466;&#127464;","Netherlands":"&#127475;&#127473;",
+  "Japan":"&#127471;&#127477;","Sweden":"&#127480;&#127466;","Egypt":"&#127466;&#127468;",
+  "France":"&#127467;&#127479;","Norway":"&#127475;&#127476;","Argentina":"&#127462;&#127479;",
+  "Colombia":"&#127464;&#127476;","England":"&#127988;&#917607;&#917602;&#917605;&#917614;&#917607;&#917631;",
+  "Spain":"&#127466;&#127480;","Portugal":"&#127477;&#127481;",
+  "Scotland":"&#127988;&#917607;&#917602;&#917619;&#917603;&#917620;&#917631;",
+  "Paraguay":"&#127477;&#127486;","Cape Verde":"&#127464;&#127483;","South Korea":"&#127472;&#127479;",
+  "Belgium":"&#127463;&#127466;","Australia":"&#127462;&#127482;","Uruguay":"&#127482;&#127486;",
+  "Iran":"&#127470;&#127479;","Croatia":"&#127464;&#127479;","Algeria":"&#127465;&#127487;",
+  "Austria":"&#127462;&#127481;","Ghana":"&#127468;&#127469;","DR Congo":"&#127464;&#127465;","Senegal":"&#127480;&#127475;"
+};
+
+var R32=[
+  {id:"m73",date:"Jun 28",venue:"Los Angeles",t1:"South Africa",t2:"Canada"},
+  {id:"m76",date:"Jun 29",venue:"Houston",t1:"Brazil",t2:"Japan"},
+  {id:"m74",date:"Jun 29",venue:"Foxborough",t1:"Germany",t2:"Paraguay"},
+  {id:"m75",date:"Jun 30",venue:"Monterrey",t1:"Netherlands",t2:"Morocco"},
+  {id:"m78",date:"Jun 30",venue:"Arlington",t1:"Ivory Coast",t2:"Norway"},
+  {id:"m77",date:"Jun 30",venue:"East Rutherford",t1:"France",t2:"Sweden"},
+  {id:"m79",date:"Jul 1",venue:"Mexico City",t1:"Mexico",t2:"Ecuador"},
+  {id:"m80",date:"Jul 1",venue:"Atlanta",t1:"England",t2:"DR Congo"},
+  {id:"m82",date:"Jul 1",venue:"Seattle",t1:"Belgium",t2:"Senegal"},
+  {id:"m81",date:"Jul 2",venue:"Santa Clara",t1:"United States",t2:"Bosnia and Herzegovina"},
+  {id:"m84",date:"Jul 2",venue:"Los Angeles",t1:"Spain",t2:"Austria"},
+  {id:"m83",date:"Jul 2",venue:"Toronto",t1:"Portugal",t2:"Croatia"},
+  {id:"m85",date:"Jul 2",venue:"Vancouver",t1:"Switzerland",t2:"Algeria"},
+  {id:"m88",date:"Jul 3",venue:"Dallas",t1:"Australia",t2:"Egypt"},
+  {id:"m86",date:"Jul 3",venue:"Miami",t1:"Argentina",t2:"Cape Verde"},
+  {id:"m87",date:"Jul 3",venue:"Kansas City",t1:"Colombia",t2:"Ghana"}
+];
+var R16=[
+  {id:"r16a",t1match:"m74",t2match:"m77",date:"Jul 4",venue:"Philadelphia"},
+  {id:"r16b",t1match:"m73",t2match:"m75",date:"Jul 4",venue:"Houston"},
+  {id:"r16c",t1match:"m76",t2match:"m78",date:"Jul 5",venue:"New York/NJ"},
+  {id:"r16d",t1match:"m79",t2match:"m80",date:"Jul 5",venue:"Mexico City"},
+  {id:"r16e",t1match:"m83",t2match:"m84",date:"Jul 6",venue:"Dallas"},
+  {id:"r16f",t1match:"m81",t2match:"m82",date:"Jul 6",venue:"Seattle"},
+  {id:"r16g",t1match:"m86",t2match:"m88",date:"Jul 7",venue:"Atlanta"},
+  {id:"r16h",t1match:"m85",t2match:"m87",date:"Jul 7",venue:"Vancouver"}
+];
+var QF=[
+  {id:"qfa",t1match:"r16a",t2match:"r16b",date:"Jul 9",venue:"Philadelphia"},
+  {id:"qfb",t1match:"r16c",t2match:"r16d",date:"Jul 10",venue:"New York/NJ"},
+  {id:"qfc",t1match:"r16e",t2match:"r16f",date:"Jul 9",venue:"Dallas"},
+  {id:"qfd",t1match:"r16g",t2match:"r16h",date:"Jul 11",venue:"Atlanta"}
+];
+var SF=[
+  {id:"sfa",t1match:"qfa",t2match:"qfb",date:"Jul 14",venue:"Dallas"},
+  {id:"sfb",t1match:"qfc",t2match:"qfd",date:"Jul 15",venue:"Atlanta"}
+];
+var FIN={id:"final",t1match:"sfa",t2match:"sfb",date:"Jul 19",venue:"East Rutherford"};
+var ALL=R32.concat(R16).concat(QF).concat(SF).concat([FIN]);
+
+var selectedTeam=null,picks={},tbdPicks={};
+
+function flag(n){return FLAGS[n]||"&#127987;";}
+function findMatch(id){for(var i=0;i<ALL.length;i++)if(ALL[i].id===id)return ALL[i];return null;}
+function findR32(team){
+  for(var i=0;i<R32.length;i++){
+    var m=R32[i];
+    if(resolveSlot(m,1)===team||resolveSlot(m,2)===team) return m;
+    if((m.t1candidates||[]).indexOf(team)>=0||(m.t2candidates||[]).indexOf(team)>=0) return m;
+  }
+  return null;
+}
+function findNext(mid,round){for(var i=0;i<round.length;i++)if(round[i].t1match===mid||round[i].t2match===mid)return round[i];return null;}
+function resolveSlot(match,s){
+  if(s===1){if(match.t1match)return picks[match.t1match]||null;if(match.t1)return match.t1;return tbdPicks[match.id+"_t1"]||null;}
+  if(match.t2match)return picks[match.t2match]||null;if(match.t2)return match.t2;return tbdPicks[match.id+"_t2"]||null;
+}
+function getLabel(match,s){return s===1?(match.t1label||match.t1||"TBD"):(match.t2label||match.t2||"TBD");}
+function getCands(match,s){return s===1?(match.t1candidates||[]):(match.t2candidates||[]);}
+
+function addPrompt(el,html,isTbd){
+  var d=document.createElement("div");
+  d.className="stage-prompt"+(isTbd?" tbd-prompt":"");
+  d.innerHTML=html;el.appendChild(d);
+}
+
+function renderTbdPicker(matchId,side,el){
+  var match=findMatch(matchId);if(!match)return true;
+  var key=matchId+"_t"+(side===1?"1":"2");
+  if(tbdPicks[key])return true;
+  var cands=getCands(match,side);if(!cands.length)return false;
+  var lbl=getLabel(match,side);
+  addPrompt(el,"Who qualifies as <strong>"+lbl+"</strong>? Pick to continue:",true);
+  var card=document.createElement("div");card.className="match-card tbd-card";
+  cands.forEach(function(name){
+    var r=document.createElement("button");r.type="button";r.className="team-row pickable";
+    r.dataset.tbdMatchId=matchId;r.dataset.tbdSide=side;r.dataset.tbdTeam=name;
+    r.innerHTML='<span class="row-flag">'+flag(name)+'</span><span class="tname">'+name+'</span><span class="phint">pick to qualify</span>';
+    card.appendChild(r);
+  });
+  el.appendChild(card);return false;
+}
+
+function renderMatchTree(matchId,el,teamName){
+  var match=findMatch(matchId);if(!match||picks[matchId])return true;
+  var t1=resolveSlot(match,1);
+  if(!t1){
+    if(match.t1match){if(!renderMatchTree(match.t1match,el,teamName))return false;t1=picks[match.t1match]||null;if(!t1)return false;}
+    else if(match.t1candidates){if(!renderTbdPicker(matchId,1,el))return false;t1=tbdPicks[matchId+"_t1"]||null;if(!t1)return false;}
+    else return false;
+  }
+  var t2=resolveSlot(match,2);
+  if(!t2){
+    if(match.t2match){if(!renderMatchTree(match.t2match,el,teamName))return false;t2=picks[match.t2match]||null;if(!t2)return false;}
+    else if(match.t2candidates){if(!renderTbdPicker(matchId,2,el))return false;t2=tbdPicks[matchId+"_t2"]||null;if(!t2)return false;}
+    else return false;
+  }
+  if(!t1||!t2)return false;
+  addPrompt(el,flag(teamName)+" <strong>"+teamName+"</strong> will face the winner of this match. Pick the winner:");
+  var card=document.createElement("div");card.className="match-card highlight";
+  var info=document.createElement("div");info.className="match-info";
+  info.textContent=(match.date||"")+(match.venue?" · "+match.venue:"");
+  card.appendChild(info);
+  [t1,t2].forEach(function(name){
+    var r=document.createElement("button");r.type="button";r.className="team-row pickable";
+    r.dataset.matchId=matchId;r.dataset.pickName=name;
+    r.innerHTML='<span class="row-flag">'+flag(name)+'</span><span class="tname">'+name+'</span><span class="phint">tap to pick</span>';
+    card.appendChild(r);
+  });
+  el.appendChild(card);return false;
+}
+
+function renderBracket(){
+  var team=selectedTeam,el=document.getElementById("bracket-content");
+  el.innerHTML="";
+  var r32m=findR32(team);
+  if(!r32m){el.innerHTML="<p style='color:#8899aa;padding:1rem;font-size:0.88rem'>"+team+" not found in the bracket.</p>";return;}
+  var chain=[{label:"Round of 32",match:r32m}];
+  var r16m=findNext(r32m.id,R16);if(r16m)chain.push({label:"Round of 16",match:r16m});
+  var qfm=r16m?findNext(r16m.id,QF):null;if(qfm)chain.push({label:"Quarter-final",match:qfm});
+  var sfm=qfm?findNext(qfm.id,SF):null;if(sfm)chain.push({label:"Semi-final",match:sfm});
+  var finm=sfm?findNext(sfm.id,[FIN]):null;if(finm)chain.push({label:"Final",match:finm});
+  var eliminated=false,prevMatchId=null;
+
+  for(var si=0;si<chain.length;si++){
+    var label=chain[si].label,match=chain[si].match;
+    var winner=picks[match.id],isFinal=label==="Final";
+    var rl=document.createElement("div");rl.className="round-label";rl.textContent=label;el.appendChild(rl);
+
+    if(si>0&&!eliminated){
+      var sibId=match.t1match===prevMatchId?match.t2match:match.t1match;
+      if(sibId){
+        if(!renderMatchTree(sibId,el,team)) break;
+      }
+    }
+
+    if(si===0){
+      var teamSide=0;
+      if(resolveSlot(match,1)===team||(match.t1candidates||[]).indexOf(team)>=0) teamSide=1;
+      else if(resolveSlot(match,2)===team||(match.t2candidates||[]).indexOf(team)>=0) teamSide=2;
+      if(teamSide===1&&!match.t1&&!tbdPicks[match.id+"_t1"]) tbdPicks[match.id+"_t1"]=team;
+      if(teamSide===2&&!match.t2&&!tbdPicks[match.id+"_t2"]) tbdPicks[match.id+"_t2"]=team;
+      var otherSide=teamSide===1?2:1;
+      var otherVal=resolveSlot(match,otherSide);
+      if(!otherVal){
+        var otherKey=match.id+"_t"+(otherSide===1?"1":"2");
+        if(!tbdPicks[otherKey]){
+          addPrompt(el,flag(team)+" <strong>"+team+"</strong> faces the <strong>"+getLabel(match,otherSide)+"</strong>. Pick who you think qualifies:",true);
+          renderTbdPicker(match.id,otherSide,el);
+          if(!tbdPicks[otherKey]) break;
+        }
+      }
+    }
+
+    var t1=resolveSlot(match,1),t2=resolveSlot(match,2);
+    var canPick=!eliminated&&!!t1&&!!t2&&!winner;
+
+    if(canPick){
+      var opp=t1===team?t2:t1;
+      if(si===0) addPrompt(el,flag(team)+" <strong>"+team+"</strong> open their campaign against <strong>"+flag(opp)+" "+opp+"</strong>. Pick the winner:");
+    }
+
+    var card=document.createElement("div");card.className="match-card";
+    var info=document.createElement("div");info.className="match-info";
+    info.textContent=(match.date||"")+(match.venue?" · "+match.venue:"");
+    card.appendChild(info);
+
+    function addRow(name,isFollow,isSel,isElim,hint,pickable){
+      var r=document.createElement("button");r.type="button";
+      r.className="team-row"+(isFollow?" followed":"")+(isSel?" selected":"")+(isElim?" eliminated":"")+(pickable?" pickable":"");
+      if(pickable&&name){r.dataset.matchId=match.id;r.dataset.pickName=name;}
+      r.innerHTML='<span class="row-flag">'+flag(name)+'</span><span class="tname">'+name+'</span>'+(hint?'<span class="phint">'+hint+'</span>':"");
+      return r;
+    }
+    var h1=winner===t1?(isFinal?"&#x1F3C6; Champions":"→ advances"):(!winner&&canPick?"tap to pick":"");
+    var h2=winner===t2?(isFinal?"&#x1F3C6; Champions":"→ advances"):(!winner&&canPick?"tap to pick":"");
+    if(t1)card.appendChild(addRow(t1,t1===team,winner===t1,!!(winner&&winner!==t1),h1,canPick));
+    if(t2)card.appendChild(addRow(t2,t2===team,winner===t2,!!(winner&&winner!==t2),h2,canPick));
+    el.appendChild(card);
+    prevMatchId=match.id;
+
+    if(isFinal&&winner===team){
+      var b=document.createElement("div");b.className="champion-banner";
+      b.innerHTML='<div class="champion-flag">'+flag(team)+'</div><div class="champion-name">'+team+'</div><div class="champion-sub">2026 FIFA World Cup Champions &#x1F3C6;</div>';
+      el.insertBefore(b,el.firstChild);break;
+    }
+    if(winner&&winner!==team){
+      eliminated=true;
+      var m=document.createElement("div");m.className="elim-card";
+      m.innerHTML='<p>'+flag(team)+' <strong style="color:#ffaaaa">'+team+'</strong> are eliminated by '+flag(winner)+' <strong>'+winner+'</strong>.</p><button class="elim-btn" id="again">Pick again?</button>';
+      el.appendChild(m);
+      document.getElementById("again").addEventListener("click",function(){picks={};tbdPicks={};renderBracket();});
+      break;
+    }
+    if(!winner)break;
+  }
+}
+
+document.getElementById("bracket-content").addEventListener("click",function(e){
+  var row=e.target.closest("[data-match-id]");
+  if(row){picks[row.dataset.matchId]=row.dataset.pickName;renderBracket();return;}
+  var tbd=e.target.closest("[data-tbd-match-id]");
+  if(tbd){tbdPicks[tbd.dataset.tbdMatchId+"_t"+(tbd.dataset.tbdSide==="1"?"1":"2")]=tbd.dataset.tbdTeam;renderBracket();return;}
+});
+document.getElementById("teams-grid").addEventListener("click",function(e){
+  var btn=e.target.closest("[data-team]");if(!btn)return;
+  selectedTeam=btn.dataset.team;picks={};tbdPicks={};
+  document.getElementById("team-select").style.display="none";
+  document.getElementById("bracket-view").style.display="block";
+  document.getElementById("bracket-title").innerHTML=flag(selectedTeam)+" "+selectedTeam;
+  renderBracket();
+});
+document.getElementById("search").addEventListener("input",function(){renderTeams(this.value);});
+document.getElementById("back-btn").addEventListener("click",function(){
+  document.getElementById("team-select").style.display="block";
+  document.getElementById("bracket-view").style.display="none";selectedTeam=null;
+});
+document.getElementById("reset-btn").addEventListener("click",function(){picks={};tbdPicks={};renderBracket();});
+
+function allTeams(){
+  var seen={},list=[];
+  R32.forEach(function(m){
+    [m.t1,m.t2].forEach(function(n){if(n&&!seen[n]){seen[n]=true;list.push(n);}});
+    (m.t1candidates||[]).forEach(function(n){if(!seen[n]){seen[n]=true;list.push(n);}});
+    (m.t2candidates||[]).forEach(function(n){if(!seen[n]){seen[n]=true;list.push(n);}});
+  });
+  return list.sort();
+}
+function renderTeams(filter){
+  filter=filter||"";
+  var grid=document.getElementById("teams-grid");grid.innerHTML="";
+  allTeams().filter(function(n){return n.toLowerCase().indexOf(filter.toLowerCase())>=0;}).forEach(function(n){
+    var btn=document.createElement("button");btn.className="team-btn";btn.dataset.team=n;
+    btn.innerHTML='<span style="font-size:18px">'+flag(n)+'</span>'+n;
+    grid.appendChild(btn);
+  });
+}
+
+// ── LIVE DATA ────────────────────────────────────────────────────────────────
+// Fetch knockout results from openfootball/worldcup.json and auto-populate picks.
+// The JSON uses team names like "Bosnia & Herzegovina"; we normalise these below.
+
+var TEAM_ALIASES = {
+  "Bosnia & Herzegovina": "Bosnia and Herzegovina",
+  "USA": "United States",
+  "Korea Republic": "South Korea",
+  "Cote d'Ivoire": "Ivory Coast",
+  "IR Iran": "Iran",
+  "DR Congo": "DR Congo",
+  "Cape Verde": "Cape Verde"
+};
+
+function normaliseName(n) {
+  return TEAM_ALIASES[n] || n;
+}
+
+// Map of "Team A|Team B" (sorted) -> match id, for knockout matches only
+var KNOCKOUT_LOOKUP = {
+  "Canada|South Africa":              "m73",
+  "Brazil|Japan":                     "m76",
+  "Germany|Paraguay":                 "m74",
+  "Morocco|Netherlands":              "m75",
+  "Ivory Coast|Norway":               "m78",
+  "France|Sweden":                    "m77",
+  "Ecuador|Mexico":                   "m79",
+  "DR Congo|England":                 "m80",
+  "Belgium|Senegal":                  "m82",
+  "Bosnia and Herzegovina|United States": "m81",
+  "Austria|Spain":                    "m84",
+  "Croatia|Portugal":                 "m83",
+  "Algeria|Switzerland":              "m85",
+  "Australia|Egypt":                  "m88",
+  "Argentina|Cape Verde":             "m86",
+  "Colombia|Ghana":                   "m87",
+};
+
+function matchKey(t1, t2) {
+  return [normaliseName(t1), normaliseName(t2)].sort().join("|");
+}
+
+function getWinnerFromScore(t1, t2, score) {
+  if (!score || !score.ft) return null;
+  var g1 = score.ft[0], g2 = score.ft[1];
+  // Check penalties
+  if (score.p) {
+    g1 += score.p[0]; g2 += score.p[1];
+  }
+  if (g1 > g2) return normaliseName(t1);
+  if (g2 > g1) return normaliseName(t2);
+  return null; // draw (shouldn't happen in knockout)
+}
+
+async function loadLiveResults() {
+  try {
+    var url = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
+    var res = await fetch(url);
+    var data = await res.json();
+    var updated = false;
+    (data.matches || []).forEach(function(m) {
+      if (!m.score || !m.score.ft) return; // not played yet
+      var key = matchKey(m.team1, m.team2);
+      var mid = KNOCKOUT_LOOKUP[key];
+      if (!mid) return; // group stage match, ignore
+      if (picks[mid]) return; // user already picked, don't override
+      var winner = getWinnerFromScore(m.team1, m.team2, m.score);
+      if (winner) { picks[mid] = winner; updated = true; }
+    });
+    if (updated) renderBracket();
+  } catch(e) {
+    console.warn("Could not load live results:", e);
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+renderTeams();
+loadLiveResults();
+</script>
+</body>
+</html>

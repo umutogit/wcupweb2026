@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 &#8212; Bracket</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a1628;color:#e8eaf0;min-height:100vh;overflow-x:auto}
+.page{min-width:700px;padding:16px 12px 32px}
+.page-header{text-align:center;margin-bottom:14px}
+.page-header h1{font-size:1.4rem;color:#f5c518;letter-spacing:1px;font-weight:800;text-transform:uppercase}
+.page-header p{font-size:0.72rem;color:#556677;margin-top:3px}
+.top-nav{display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:16px}
+.nav-btn{border:1px solid #3a4a60;background:#1a2840;color:#8899aa;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:0.78rem;font-family:inherit;transition:background 0.15s}
+.nav-btn:hover{background:#243855;color:#e8eaf0}
+.nav-btn.active{background:#f5c518;color:#0a1628;border-color:#f5c518;font-weight:700}
+
+/* Bracket layout */
+.bracket-wrap{display:flex;align-items:center;width:100%;gap:0}
+.side{display:flex;flex-direction:row;flex:1;gap:0}
+.side.right{flex-direction:row-reverse}
+.round-col{display:flex;flex-direction:column;justify-content:space-around;padding:0 3px;position:relative}
+.center-col{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;gap:8px}
+.round-label{text-align:center;font-size:0.55rem;font-weight:700;color:#3a4a60;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+
+/* R32 pairing group: two matches stacked with a bracket line between */
+.r32-group{display:flex;flex-direction:column;align-items:center;margin:5px 0;position:relative}
+.r32-group .match{margin:0}
+/* vertical bracket line connecting the two R32 matches in a pair */
+.r32-group::after{
+  content:"";position:absolute;
+  right:-3px;
+  top:18px; /* center of top match */
+  height:calc(50% - 14px + 18px); /* connect midpoints */
+  width:3px;
+  border-right:1px solid #2a3a55;
+  border-top:1px solid #2a3a55;
+  border-bottom:1px solid #2a3a55;
+  border-radius:0 4px 4px 0;
+  pointer-events:none;
+}
+.side.right .r32-group::after{
+  right:auto;left:-3px;
+  border-radius:4px 0 0 4px;
+  border-right:none;
+  border-left:1px solid #2a3a55;
+}
+
+/* divider between the two matches in a pair */
+.pair-divider{width:100%;height:1px;background:#1e2e44;margin:2px 0}
+
+/* single match */
+.match{position:relative}
+.match-slot{background:#111e30;border:1px solid #1e2e44;border-radius:8px;overflow:visible;display:flex;flex-direction:row;padding:3px;gap:2px}
+
+/* Flag button */
+.flag-btn{
+  width:30px;height:30px;border-radius:50%;border:2px solid transparent;
+  background:#0f1a28;display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;transition:border-color 0.12s,transform 0.1s,opacity 0.1s;
+  position:relative;flex-shrink:0;line-height:1;padding:0;
+  -webkit-tap-highlight-color:transparent;
+}
+.flag-btn:hover{border-color:#f5c518;transform:scale(1.15);z-index:10}
+.flag-btn.winner{border-color:#f5c518;background:#1a2e10}
+.flag-btn.loser{opacity:0.22;filter:grayscale(0.7)}
+.flag-btn.tbd{opacity:0.18;cursor:default;filter:grayscale(1)}
+.flag-btn.tbd:hover{border-color:transparent;transform:none}
+
+/* Tooltip */
+.tooltip{
+  position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);
+  background:#0a1628;border:1px solid #f5c518;color:#f5c518;
+  font-size:0.65rem;font-weight:600;white-space:nowrap;
+  padding:3px 8px;border-radius:5px;pointer-events:none;
+  opacity:0;transition:opacity 0.15s;z-index:200;
+  font-family:'Segoe UI',Arial,sans-serif;
+}
+.tooltip::after{
+  content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:4px solid transparent;border-top-color:#f5c518;
+}
+.flag-btn:hover .tooltip{opacity:1}
+
+/* Later round columns (R16, QF, SF) - normal spacing */
+.match-normal{margin:5px 0}
+
+/* Final */
+.final-box{background:#111e30;border:2px solid #f5c518;border-radius:10px;overflow:hidden;padding:6px;text-align:center}
+.final-label{font-size:0.6rem;font-weight:700;color:#f5c518;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px}
+.final-slot{display:flex;flex-direction:row;justify-content:center;gap:6px}
+.trophy{font-size:2rem;line-height:1;display:block;text-align:center;margin-bottom:4px}
+.champion-box{text-align:center;padding:6px 10px;background:#0f1a08;border:1px solid #f5c518;border-radius:8px;min-width:80px}
+.champion-box .cf{font-size:26px}
+.champion-box .cn{font-size:0.7rem;font-weight:700;color:#f5c518;margin-top:2px}
+.champion-box .cs{font-size:0.58rem;color:#556677;margin-top:1px}
+
+/* Legend */
+.legend{display:flex;justify-content:center;gap:14px;margin-top:14px;font-size:0.68rem;color:#556677;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:5px}
+.leg-circle{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+
+/* ── Scoreboard ─────────────────────────────────────────── */
+.scoreboard{max-width:900px;margin:28px auto 0;padding:0 12px}
+.scoreboard-title{font-size:0.7rem;font-weight:700;color:#3a4a60;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #1e2e44}
+.scores-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.score-card{background:#111e30;border:1px solid #1e2e44;border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:4px}
+.score-card.live{border-color:#f5c518;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{border-color:#f5c518}50%{border-color:#3a4a00}}
+.score-round{font-size:0.6rem;color:#3a4a60;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px}
+.score-row{display:flex;align-items:center;gap:6px;font-size:0.8rem}
+.score-row .sf{font-size:14px;flex-shrink:0}
+.score-row .sn{flex:1;color:#c0ccd8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.score-row .sg{font-size:0.85rem;font-weight:700;color:#e8eaf0;min-width:14px;text-align:right}
+.score-row.winner .sn{color:#f5c518;font-weight:600}
+.score-row.winner .sg{color:#f5c518}
+.score-divider{height:1px;background:#1e2e44;margin:2px 0}
+.score-meta{font-size:0.6rem;color:#3a4a60;margin-top:2px}
+.scoreboard-empty{font-size:0.8rem;color:#2a3a55;text-align:center;padding:16px}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="page-header">
+  <h1>&#x26BD; World Cup 2026 &#8212; Knockout Bracket</h1>
+  <p>Click a flag to pick the winner. Hover to see the team name.</p>
+</div>
+<div class="top-nav">
+  <button class="nav-btn" onclick="window.location.href='index.html'">&#x2302; Home</button>
+  <button class="nav-btn" onclick="window.location.href='wc2026 bracket.html'">&#8592; Team Path View</button>
+  <button class="nav-btn active">Visual Bracket</button>
+  <button class="nav-btn" onclick="window.location.href='wc2026 team stats.html'">&#x1F4CA; Team Stats</button>
+  <button class="nav-btn" onclick="resetAll()">Reset all</button>
+</div>
+<div class="bracket-wrap" id="bracket-wrap"></div>
+<div class="legend">
+  <span><span class="leg-circle" style="border:2px solid #f5c518;background:#1a2e10"></span>Winner / advancing</span>
+  <span><span class="leg-circle" style="border:2px solid #1e2e44;background:#0f1a28"></span>Click flag to pick</span>
+  <span><span class="leg-circle" style="opacity:0.22;background:#556677"></span>Eliminated</span>
+</div>
+</div>
+
+<script>
+var FLAGS={
+  "Mexico":"&#127474;&#127485;","South Africa":"&#127487;&#127462;","Switzerland":"&#127464;&#127469;",
+  "Canada":"&#127464;&#127462;","Bosnia-Herzegovina":"&#127463;&#127462;","Brazil":"&#127463;&#127479;",
+  "Morocco":"&#127474;&#127462;","United States":"&#127482;&#127480;","Germany":"&#127465;&#127466;",
+  "Ivory Coast":"&#127464;&#127470;","Ecuador":"&#127466;&#127464;","Netherlands":"&#127475;&#127473;",
+  "Japan":"&#127471;&#127477;","Sweden":"&#127480;&#127466;","Egypt":"&#127466;&#127468;",
+  "France":"&#127467;&#127479;","Norway":"&#127475;&#127476;","Argentina":"&#127462;&#127479;",
+  "Colombia":"&#127464;&#127476;","England":"&#127988;&#917607;&#917602;&#917605;&#917614;&#917607;&#917631;",
+  "Spain":"&#127466;&#127480;","Portugal":"&#127477;&#127481;",
+  "Scotland":"&#127988;&#917607;&#917602;&#917619;&#917603;&#917620;&#917631;",
+  "Paraguay":"&#127477;&#127486;","Cape Verde":"&#127464;&#127483;","South Korea":"&#127472;&#127479;",
+  "Belgium":"&#127463;&#127466;","Australia":"&#127462;&#127482;","Uruguay":"&#127482;&#127486;",
+  "Iran":"&#127470;&#127479;","Croatia":"&#127464;&#127479;","Algeria":"&#127465;&#127487;",
+  "Austria":"&#127462;&#127481;","Ghana":"&#127468;&#127469;","DR Congo":"&#127464;&#127465;","Senegal":"&#127480;&#127475;"
+};
+function flag(n){return n&&FLAGS[n]?FLAGS[n]:"&#127987;";}
+function isTbd(n){return !n||n.indexOf("Grp")>=0||n.indexOf("Winner")>=0||n.indexOf("Runner")>=0||n.indexOf("Best")>=0||n.indexOf("3rd")>=0||n==="TBD";}
+
+var picks={};
+var livePicks={}; // results from live data — never cleared by user
+
+var MATCHES={
+  // R32 left side — grouped as pairs: [m73,m76] feed r16a; [m74,m75] feed r16b; [m78,m77] feed r16c; [m79,m80] feed r16d
+  m73:{t1:"South Africa",t2:"Canada",date:"Jun 28",venue:"Los Angeles"},
+  m76:{t1:"Brazil",t2:"Japan",date:"Jun 29",venue:"Houston"},
+  m74:{t1:"Germany",t2:"Paraguay",date:"Jun 29",venue:"Foxborough"},
+  m75:{t1:"Netherlands",t2:"Morocco",date:"Jun 30",venue:"Monterrey"},
+  m78:{t1:"Ivory Coast",t2:"Norway",date:"Jun 30",venue:"Arlington"},
+  m77:{t1:"France",t2:"Sweden",date:"Jun 30",venue:"East Rutherford"},
+  m79:{t1:"Mexico",t2:"Ecuador",date:"Jul 1",venue:"Mexico City"},
+  m80:{t1:"England",t2:"DR Congo",date:"Jul 1",venue:"Atlanta"},
+  // R32 right side — [m82,m81] feed r16e; [m84,m83] feed r16f; [m85,m86] feed r16g; [m88,m87] feed r16h
+  m82:{t1:"Belgium",t2:"Senegal",date:"Jul 1",venue:"Seattle"},
+  m81:{t1:"United States",t2:"Bosnia and Herzegovina",date:"Jul 2",venue:"Santa Clara"},
+  m84:{t1:"Spain",t2:"Austria",date:"Jul 2",venue:"Los Angeles"},
+  m83:{t1:"Portugal",t2:"Croatia",date:"Jul 2",venue:"Toronto"},
+  m85:{t1:"Switzerland",t2:"Algeria",date:"Jul 2",venue:"Vancouver"},
+  m86:{t1:"Argentina",t2:"Cape Verde",date:"Jul 3",venue:"Miami"},
+  m88:{t1:"Australia",t2:"Egypt",date:"Jul 3",venue:"Dallas"},
+  m87:{t1:"Colombia",t2:"Ghana",date:"Jul 3",venue:"Kansas City"},
+  // R16
+    r16a:{t1match:"m74",t2match:"m77",date:"Jul 4",venue:"Philadelphia"},
+  r16b:{t1match:"m73",t2match:"m75",date:"Jul 4",venue:"Houston"},
+  r16c:{t1match:"m76",t2match:"m78",date:"Jul 5",venue:"New York/NJ"},
+  r16d:{t1match:"m79",t2match:"m80",date:"Jul 5",venue:"Mexico City"},
+  r16e:{t1match:"m83",t2match:"m84",date:"Jul 6",venue:"Dallas"},
+  r16f:{t1match:"m81",t2match:"m82",date:"Jul 6",venue:"Seattle"},
+  r16g:{t1match:"m86",t2match:"m88",date:"Jul 7",venue:"Atlanta"},
+  r16h:{t1match:"m85",t2match:"m87",date:"Jul 7",venue:"Vancouver"},
+  // QF
+    qfa:{t1match:"r16a",t2match:"r16b",date:"Jul 9",venue:"Philadelphia"},
+  qfb:{t1match:"r16c",t2match:"r16d",date:"Jul 10",venue:"New York/NJ"},
+  qfc:{t1match:"r16e",t2match:"r16f",date:"Jul 9",venue:"Dallas"},
+  qfd:{t1match:"r16g",t2match:"r16h",date:"Jul 11",venue:"Atlanta"},
+  // SF
+  sfa:{t1match:"qfa",t2match:"qfb",date:"Jul 14",venue:"Dallas"},
+  sfb:{t1match:"qfc",t2match:"qfd",date:"Jul 15",venue:"Atlanta"},
+  // Final
+  fin:{t1match:"sfa",t2match:"sfb",date:"Jul 19",venue:"E.Rutherford"}
+};
+
+function getTeam(mid,side){
+  var m=MATCHES[mid];if(!m)return null;
+  var src=side===1?m.t1match:m.t2match;
+  if(src)return picks[src]||null;
+  return side===1?(m.t1||null):(m.t2||null);
+}
+function clearDownstream(mid){
+  Object.keys(MATCHES).forEach(function(id){
+    var m=MATCHES[id];
+    if(m.t1match===mid||m.t2match===mid){delete picks[id];clearDownstream(id);}
+  });
+}
+function pickWinner(mid,team){picks[mid]=team;clearDownstream(mid);
+var TEAM_ALIASES = {
+  "Bosnia & Herzegovina": "Bosnia and Herzegovina",
+  "USA": "United States",
+  "Korea Republic": "South Korea",
+  "Cote d'Ivoire": "Ivory Coast",
+  "IR Iran": "Iran"
+};
+function normaliseName(n){return TEAM_ALIASES[n]||n;}
+
+var KNOCKOUT_LOOKUP = {
+  "Canada|South Africa":                  "m73",
+  "Brazil|Japan":                         "m76",
+  "Germany|Paraguay":                     "m74",
+  "Morocco|Netherlands":                  "m75",
+  "Ivory Coast|Norway":                   "m78",
+  "France|Sweden":                        "m77",
+  "Ecuador|Mexico":                       "m79",
+  "DR Congo|England":                     "m80",
+  "Belgium|Senegal":                      "m82",
+  "Bosnia and Herzegovina|United States": "m81",
+  "Austria|Spain":                        "m84",
+  "Croatia|Portugal":                     "m83",
+  "Algeria|Switzerland":                  "m85",
+  "Australia|Egypt":                      "m88",
+  "Argentina|Cape Verde":                 "m86",
+  "Colombia|Ghana":                       "m87"
+};
+
+function matchKey(t1,t2){return [normaliseName(t1),normaliseName(t2)].sort().join("|");}
+
+function getWinner(t1,t2,score){
+  if(!score||!score.ft) return null;
+  var g1=score.ft[0],g2=score.ft[1];
+  if(score.p){g1+=score.p[0];g2+=score.p[1];}
+  if(g1>g2) return normaliseName(t1);
+  if(g2>g1) return normaliseName(t2);
+  return null;
+}
+
+async function loadLiveResults(){
+  try{
+    var res=await fetch("https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json");
+    var data=await res.json();
+    var updated=false;
+    (data.matches||[]).forEach(function(m){
+      if(!m.score||!m.score.ft) return;
+      var key=matchKey(m.team1,m.team2);
+      var mid=KNOCKOUT_LOOKUP[key];
+      if(!mid||picks[mid]) return;
+      var w=getWinner(m.team1,m.team2,m.score);
+      if(w){picks[mid]=w;updated=true;}
+    });
+    if(updated) render();
+  }catch(e){console.warn("Live data error:",e);}
+}
+
+render();
+loadLiveResults();}
+function resetAll(){picks={};
+var TEAM_ALIASES = {
+  "Bosnia & Herzegovina": "Bosnia and Herzegovina",
+  "USA": "United States",
+  "Korea Republic": "South Korea",
+  "Cote d'Ivoire": "Ivory Coast",
+  "IR Iran": "Iran"
+};
+function normaliseName(n){return TEAM_ALIASES[n]||n;}
+
+var KNOCKOUT_LOOKUP = {
+  "Canada|South Africa":                  "m73",
+  "Brazil|Japan":                         "m76",
+  "Germany|Paraguay":                     "m74",
+  "Morocco|Netherlands":                  "m75",
+  "Ivory Coast|Norway":                   "m78",
+  "France|Sweden":                        "m77",
+  "Ecuador|Mexico":                       "m79",
+  "DR Congo|England":                     "m80",
+  "Belgium|Senegal":                      "m82",
+  "Bosnia and Herzegovina|United States": "m81",
+  "Austria|Spain":                        "m84",
+  "Croatia|Portugal":                     "m83",
+  "Algeria|Switzerland":                  "m85",
+  "Australia|Egypt":                      "m88",
+  "Argentina|Cape Verde":                 "m86",
+  "Colombia|Ghana":                       "m87"
+};
+
+function matchKey(t1,t2){return [normaliseName(t1),normaliseName(t2)].sort().join("|");}
+
+function getWinner(t1,t2,score){
+  if(!score||!score.ft) return null;
+  var g1=score.ft[0],g2=score.ft[1];
+  if(score.p){g1+=score.p[0];g2+=score.p[1];}
+  if(g1>g2) return normaliseName(t1);
+  if(g2>g1) return normaliseName(t2);
+  return null;
+}
+
+async function loadLiveResults(){
+  try{
+    var res=await fetch("https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json");
+    var data=await res.json();
+    var updated=false;
+    (data.matches||[]).forEach(function(m){
+      if(!m.score||!m.score.ft) return;
+      var key=matchKey(m.team1,m.team2);
+      var mid=KNOCKOUT_LOOKUP[key];
+      if(!mid||picks[mid]) return;
+      var w=getWinner(m.team1,m.team2,m.score);
+      if(w){picks[mid]=w;updated=true;}
+    });
+    if(updated) render();
+  }catch(e){console.warn("Live data error:",e);}
+}
+
+render();
+loadLiveResults();}
+
+function makeFlag(name,mid,canPick,winner,tooltipText){
+  var t=isTbd(name);
+  var isW=winner&&winner===name;
+  var isL=winner&&winner!==name;
+  var btn=document.createElement("button");
+  btn.type="button";
+  btn.className="flag-btn"+(isW?" winner":"")+(isL?" loser":"")+(t?" tbd":"");
+  if(!t&&canPick) btn.onclick=function(){pickWinner(mid,name);};
+  var em=document.createElement("span");
+  em.innerHTML=t?"&#8987;":flag(name);
+  btn.appendChild(em);
+  var tip=document.createElement("span");tip.className="tooltip";
+  tip.textContent=tooltipText||name||(t?"TBD":"?");
+  btn.appendChild(tip);
+  return btn;
+}
+
+function makeMatch(mid,extraClass){
+  var m=MATCHES[mid];
+  var t1=getTeam(mid,1),t2=getTeam(mid,2);
+  var winner=picks[mid];
+  var canPick=!!(t1&&t2&&!isTbd(t1)&&!isTbd(t2));
+  var wrap=document.createElement("div");
+  wrap.className="match"+(extraClass?" "+extraClass:"");
+  var slot=document.createElement("div");slot.className="match-slot";
+  slot.title=(m.date||"")+(m.venue?" · "+m.venue:"");
+  slot.appendChild(makeFlag(t1||(m.t1||"TBD"),mid,canPick,winner));
+  slot.appendChild(makeFlag(t2||(m.t2||"TBD"),mid,canPick,winner));
+  wrap.appendChild(slot);
+  return wrap;
+}
+
+// Make a paired R32 group: two matches stacked, visually bracketed together
+// mid1 and mid2 are the two R32 matches whose winners meet in R16
+function makePair(mid1,mid2){
+  var grp=document.createElement("div");grp.className="r32-group";
+  grp.appendChild(makeMatch(mid1));
+  var div=document.createElement("div");div.className="pair-divider";grp.appendChild(div);
+  grp.appendChild(makeMatch(mid2));
+  return grp;
+}
+
+function makeCol(ids,label,isPaired){
+  var col=document.createElement("div");col.className="round-col";
+  if(label){var l=document.createElement("div");l.className="round-label";l.textContent=label;col.appendChild(l);}
+  if(isPaired){
+    // ids is array of pairs [[mid1,mid2],[mid1,mid2],...]
+    ids.forEach(function(pair){col.appendChild(makePair(pair[0],pair[1]));});
+  } else {
+    ids.forEach(function(id){
+      col.appendChild(makeMatch(id,"match-normal"));
+    });
+  }
+  return col;
+}
+
+function render(){
+  var wrap=document.getElementById("bracket-wrap");wrap.innerHTML="";
+
+  // LEFT SIDE — one R32 column with 4 pairs
+  var L=document.createElement("div");L.className="side";
+  L.appendChild(makeCol([["m74","m77"],["m73","m75"],["m76","m78"],["m79","m80"]],"R32",true));
+  L.appendChild(makeCol(["r16a","r16b","r16c","r16d"],"R16",false));
+  L.appendChild(makeCol(["qfa","qfb"],"QF",false));
+  L.appendChild(makeCol(["sfa"],"SF",false));
+
+  // CENTER
+  var C=document.createElement("div");C.className="center-col";
+  var trophy=document.createElement("span");trophy.className="trophy";trophy.innerHTML="&#x1F3C6;";C.appendChild(trophy);
+  var finT1=getTeam("fin",1),finT2=getTeam("fin",2);
+  var finW=picks["fin"];
+  var canF=!!(finT1&&finT2&&!isTbd(finT1)&&!isTbd(finT2));
+  var fb=document.createElement("div");fb.className="final-box";
+  var fl2=document.createElement("div");fl2.className="final-label";fl2.textContent="FINAL · Jul 19";fb.appendChild(fl2);
+  var fs=document.createElement("div");fs.className="final-slot";
+  fs.appendChild(makeFlag(finT1||"TBD","fin",canF,finW));
+  fs.appendChild(makeFlag(finT2||"TBD","fin",canF,finW));
+  fb.appendChild(fs);C.appendChild(fb);
+  if(finW){
+    var cb=document.createElement("div");cb.className="champion-box";
+    cb.innerHTML='<div class="cf">'+flag(finW)+'</div><div class="cn">'+finW+'</div><div class="cs">2026 Champions</div>';
+    C.appendChild(cb);
+  }
+
+  // RIGHT SIDE — one R32 column with 4 pairs (reversed)
+  var R=document.createElement("div");R.className="side right";
+  R.appendChild(makeCol([["m83","m84"],["m81","m82"],["m86","m88"],["m85","m87"]],"R32",true));
+  R.appendChild(makeCol(["r16e","r16f","r16g","r16h"],"R16",false));
+  R.appendChild(makeCol(["qfc","qfd"],"QF",false));
+  R.appendChild(makeCol(["sfb"],"SF",false));
+
+  wrap.appendChild(L);wrap.appendChild(C);wrap.appendChild(R);
+}
+
+
+var TEAM_ALIASES = {
+  "Bosnia & Herzegovina": "Bosnia and Herzegovina",
+  "USA": "United States",
+  "Korea Republic": "South Korea",
+  "Cote d'Ivoire": "Ivory Coast",
+  "IR Iran": "Iran"
+};
+function normaliseName(n){return TEAM_ALIASES[n]||n;}
+
+var KNOCKOUT_LOOKUP = {
+  "Canada|South Africa":                  "m73",
+  "Brazil|Japan":                         "m76",
+  "Germany|Paraguay":                     "m74",
+  "Morocco|Netherlands":                  "m75",
+  "Ivory Coast|Norway":                   "m78",
+  "France|Sweden":                        "m77",
+  "Ecuador|Mexico":                       "m79",
+  "DR Congo|England":                     "m80",
+  "Belgium|Senegal":                      "m82",
+  "Bosnia and Herzegovina|United States": "m81",
+  "Austria|Spain":                        "m84",
+  "Croatia|Portugal":                     "m83",
+  "Algeria|Switzerland":                  "m85",
+  "Australia|Egypt":                      "m88",
+  "Argentina|Cape Verde":                 "m86",
+  "Colombia|Ghana":                       "m87"
+};
+
+function matchKey(t1,t2){return [normaliseName(t1),normaliseName(t2)].sort().join("|");}
+
+function getWinner(t1,t2,score){
+  if(!score||!score.ft) return null;
+  var g1=score.ft[0],g2=score.ft[1];
+  if(score.p){g1+=score.p[0];g2+=score.p[1];}
+  if(g1>g2) return normaliseName(t1);
+  if(g2>g1) return normaliseName(t2);
+  return null;
+}
+
+async function loadLiveResults(){
+  try{
+    var res=await fetch("https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json");
+    var data=await res.json();
+    var updated=false;
+    (data.matches||[]).forEach(function(m){
+      if(!m.score||!m.score.ft) return;
+      var key=matchKey(m.team1,m.team2);
+      var mid=KNOCKOUT_LOOKUP[key];
+      if(!mid||picks[mid]) return;
+      var w=getWinner(m.team1,m.team2,m.score);
+      if(w){picks[mid]=w;updated=true;}
+    });
+    if(updated) render();
+  }catch(e){console.warn("Live data error:",e);}
+}
+
+render();
+loadLiveResults();
+
+// ── Scoreboard ───────────────────────────────────────────
+var liveMatches = []; // raw match objects from API that are knockout matches
+
+var ROUND_LABELS = {
+  m73:"R32", m74:"R32", m75:"R32", m76:"R32",
+  m77:"R32", m78:"R32", m79:"R32", m80:"R32",
+  m81:"R32", m82:"R32", m83:"R32", m84:"R32",
+  m85:"R32", m86:"R32", m87:"R32", m88:"R32",
+  r16a:"R16", r16b:"R16", r16c:"R16", r16d:"R16",
+  r16e:"R16", r16f:"R16", r16g:"R16", r16h:"R16",
+  qfa:"QF", qfb:"QF", qfc:"QF", qfd:"QF",
+  sfa:"SF", sfb:"SF", fin:"Final"
+};
+
+function renderScoreboard(){
+  var grid = document.getElementById("scores-grid");
+  if(!grid) return;
+  if(!liveMatches.length){
+    grid.innerHTML='<div class="scoreboard-empty">Results will appear here as matches are played.</div>';
+    return;
+  }
+  // Sort by date
+  var sorted = liveMatches.slice().sort(function(a,b){
+    return new Date(a.date) - new Date(b.date);
+  });
+  grid.innerHTML = sorted.map(function(m){
+    var ft = m.score && m.score.ft;
+    var pen = m.score && m.score.p;
+    var g1 = ft ? ft[0] : null;
+    var g2 = ft ? ft[1] : null;
+    var p1 = pen ? pen[0] : null;
+    var p2 = pen ? pen[1] : null;
+    var t1n = normaliseName(m.team1);
+    var t2n = normaliseName(m.team2);
+    var tot1 = g1 + (p1||0);
+    var tot2 = g2 + (p2||0);
+    var w1 = ft && tot1 > tot2;
+    var w2 = ft && tot2 > tot1;
+    var midKey = matchKey(m.team1, m.team2);
+    var mid = KNOCKOUT_LOOKUP[midKey] || "";
+    var roundLbl = ROUND_LABELS[mid] || "Knockout";
+    var scoreStr1 = ft !== null && g1 !== null ? String(g1) : "-";
+    var scoreStr2 = ft !== null && g2 !== null ? String(g2) : "-";
+    var penStr = pen ? " <span style='font-size:0.65rem;color:#888'>("+p1+"-"+p2+" pen)</span>" : "";
+    var venue = m.ground || "";
+    var dateStr = m.date || "";
+    return '<div class="score-card">'
+      + '<div class="score-round">'+roundLbl+' &middot; '+dateStr+'</div>'
+      + '<div class="score-row'+(w1?" winner":"")+'"><span class="sf">'+flag(t1n)+'</span><span class="sn">'+t1n+'</span><span class="sg">'+scoreStr1+'</span></div>'
+      + '<div class="score-divider"></div>'
+      + '<div class="score-row'+(w2?" winner":"")+'"><span class="sf">'+flag(t2n)+'</span><span class="sn">'+t2n+'</span><span class="sg">'+scoreStr2+penStr+'</span></div>'
+      + (venue ? '<div class="score-meta">'+venue+'</div>' : '')
+      + '</div>';
+  }).join("");
+}
+
+// Patch loadLiveResults to also populate scoreboard
+var _origLoad = loadLiveResults;
+loadLiveResults = async function(){
+  try{
+    var res=await fetch("https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json");
+    var data=await res.json();
+    var updated=false;
+    liveMatches = [];
+    (data.matches||[]).forEach(function(m){
+      var key=matchKey(m.team1,m.team2);
+      var mid=KNOCKOUT_LOOKUP[key];
+      if(!mid) return; // group stage, skip
+      // Add to scoreboard regardless of score
+      liveMatches.push(m);
+      if(!m.score||!m.score.ft) return;
+      var w=getWinner(m.team1,m.team2,m.score);
+      if(w) livePicks[mid]=w; // always store live result
+      if(picks[mid]) return; // don't override user pick
+      if(w){picks[mid]=w;updated=true;}
+    });
+    renderScoreboard();
+    if(updated) render();
+  }catch(e){console.warn("Live data error:",e);}
+};
+
+</script>
+
+<div class="scoreboard">
+  <div class="scoreboard-title">&#128202; Match Results</div>
+  <div class="scores-grid" id="scores-grid">
+    <div class="scoreboard-empty">Results will appear here as matches are played.</div>
+  </div>
+</div>
+</body>
+</html>
