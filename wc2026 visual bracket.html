@@ -185,15 +185,15 @@ var MATCHES={
   // R16
     r16a:{t1match:"m74",t2match:"m77",date:"Jul 4",venue:"Philadelphia"},
   r16b:{t1match:"m73",t2match:"m75",date:"Jul 4",venue:"Houston"},
-  r16c:{t1match:"m76",t2match:"m78",date:"Jul 5",venue:"New York/NJ"},
-  r16d:{t1match:"m79",t2match:"m80",date:"Jul 5",venue:"Mexico City"},
-  r16e:{t1match:"m83",t2match:"m84",date:"Jul 6",venue:"Dallas"},
-  r16f:{t1match:"m81",t2match:"m82",date:"Jul 6",venue:"Seattle"},
+  r16c:{t1match:"m76",t2match:"m78",date:"Jul 5",venue:"East Rutherford"},
+  r16d:{t1match:"m81",t2match:"m82",date:"Jul 5",venue:"Seattle"},
+  r16e:{t1match:"m79",t2match:"m80",date:"Jul 6",venue:"Mexico City"},
+  r16f:{t1match:"m83",t2match:"m84",date:"Jul 6",venue:"Dallas"},
   r16g:{t1match:"m86",t2match:"m88",date:"Jul 7",venue:"Atlanta"},
   r16h:{t1match:"m85",t2match:"m87",date:"Jul 7",venue:"Vancouver"},
   // QF
     qfa:{t1match:"r16a",t2match:"r16b",date:"Jul 9",venue:"Philadelphia"},
-  qfb:{t1match:"r16c",t2match:"r16d",date:"Jul 10",venue:"New York/NJ"},
+  qfb:{t1match:"r16c",t2match:"r16d",date:"Jul 10",venue:"East Rutherford"},
   qfc:{t1match:"r16e",t2match:"r16f",date:"Jul 9",venue:"Dallas"},
   qfd:{t1match:"r16g",t2match:"r16h",date:"Jul 11",venue:"Atlanta"},
   // SF
@@ -395,7 +395,7 @@ function render(){
 
   // LEFT SIDE — one R32 column with 4 pairs
   var L=document.createElement("div");L.className="side";
-  L.appendChild(makeCol([["m74","m77"],["m73","m75"],["m76","m78"],["m79","m80"]],"R32",true));
+  L.appendChild(makeCol([["m74","m77"],["m73","m75"],["m76","m78"],["m81","m82"]],"R32",true));
   L.appendChild(makeCol(["r16a","r16b","r16c","r16d"],"R16",false));
   L.appendChild(makeCol(["qfa","qfb"],"QF",false));
   L.appendChild(makeCol(["sfa"],"SF",false));
@@ -420,7 +420,7 @@ function render(){
 
   // RIGHT SIDE — one R32 column with 4 pairs (reversed)
   var R=document.createElement("div");R.className="side right";
-  R.appendChild(makeCol([["m83","m84"],["m81","m82"],["m86","m88"],["m85","m87"]],"R32",true));
+  R.appendChild(makeCol([["m79","m80"],["m83","m84"],["m86","m88"],["m85","m87"]],"R32",true));
   R.appendChild(makeCol(["r16e","r16f","r16g","r16h"],"R16",false));
   R.appendChild(makeCol(["qfc","qfd"],"QF",false));
   R.appendChild(makeCol(["sfb"],"SF",false));
@@ -571,8 +571,6 @@ loadLiveResults = async function(){
 
 </script>
 
-<div class="scoreboard">
-  <div class="scoreboard-title">&#128202; Match Results</div>
   <div class="scores-grid" id="scores-grid">
     <div class="scoreboard-empty">Results will appear here as matches are played.</div>
   </div>
