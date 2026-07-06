@@ -161,7 +161,24 @@ function flag(n){return n&&FLAGS[n]?FLAGS[n]:"&#127987;";}
 function isTbd(n){return !n||n.indexOf("Grp")>=0||n.indexOf("Winner")>=0||n.indexOf("Runner")>=0||n.indexOf("Best")>=0||n.indexOf("3rd")>=0||n==="TBD";}
 
 var picks={};
-var livePicks={}; // results from live data — never cleared by user
+var livePicks={};
+
+// ── Confirmed results (hardcoded) ────────────────────────────────────────────
+var CONFIRMED = {
+  // R32
+  "m73":"Canada","m76":"Brazil","m74":"Paraguay","m75":"Morocco",
+  "m78":"Norway","m77":"France","m79":"Mexico","m80":"England",
+  "m82":"Belgium","m81":"United States","m84":"Spain","m83":"Portugal",
+  "m85":"Switzerland","m88":"Egypt","m86":"Argentina","m87":"Colombia",
+  // R16
+  "r16b":"Morocco","r16c":"Norway"
+};
+Object.keys(CONFIRMED).forEach(function(mid){
+  livePicks[mid] = CONFIRMED[mid];
+  picks[mid] = CONFIRMED[mid];
+});
+// ─────────────────────────────────────────────────────────────────────────────
+ // results from live data — never cleared by user
 
 var MATCHES={
   // R32 left side — grouped as pairs: [m73,m76] feed r16a; [m74,m75] feed r16b; [m78,m77] feed r16c; [m79,m80] feed r16d
@@ -256,20 +273,41 @@ function getWinner(t1,t2,score){
 }
 
 async function loadLiveResults(){
+  var TEAM_ALIASES={
+    "Bosnia & Herzegovina":"Bosnia and Herzegovina",
+    "USA":"United States","Turkiye":"Turkey",
+    "Cote d'Ivoire":"Ivory Coast","IR Iran":"Iran","Korea Republic":"South Korea"
+  };
+  function norm(n){return TEAM_ALIASES[n]||n;}
+  function mkey(t1,t2){return [norm(t1),norm(t2)].sort().join("|");}
+  var KLOOKUP={
+    "Canada|South Africa":"m73","Brazil|Japan":"m76","Germany|Paraguay":"m74",
+    "Morocco|Netherlands":"m75","Ivory Coast|Norway":"m78","France|Sweden":"m77",
+    "Ecuador|Mexico":"m79","DR Congo|England":"m80","Belgium|Senegal":"m82",
+    "Bosnia and Herzegovina|United States":"m81","Austria|Spain":"m84",
+    "Croatia|Portugal":"m83","Algeria|Switzerland":"m85","Australia|Egypt":"m88",
+    "Argentina|Cape Verde":"m86","Colombia|Ghana":"m87"
+  };
   try{
     var res=await fetch("https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json");
     var data=await res.json();
     var updated=false;
     (data.matches||[]).forEach(function(m){
-      if(!m.score||!m.score.ft) return;
-      var key=matchKey(m.team1,m.team2);
-      var mid=KNOCKOUT_LOOKUP[key];
-      if(!mid||picks[mid]) return;
-      var w=getWinner(m.team1,m.team2,m.score);
-      if(w){picks[mid]=w;updated=true;}
+      var key=mkey(m.team1,m.team2);
+      var mid=KLOOKUP[key];
+      if(!mid||!m.score||!m.score.ft) return;
+      var ft=m.score.ft;
+      var p=m.score.p;
+      var g1=ft[0]+(p?p[0]:0), g2=ft[1]+(p?p[1]:0);
+      var winner=g1>g2?norm(m.team1):g2>g1?norm(m.team2):null;
+      if(!winner) return;
+      if(livePicks[mid]===winner) return; // already set correctly
+      livePicks[mid]=winner;picks[mid]=winner;updated=true;
     });
     if(updated) render();
-  }catch(e){console.warn("Live data error:",e);}
+  }catch(e){
+    console.warn("Live fetch failed, using hardcoded results",e);
+  }
 }
 
 render();
@@ -314,22 +352,7 @@ function getWinner(t1,t2,score){
   return null;
 }
 
-async function loadLiveResults(){
-  try{
-    var res=await fetch("https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json");
-    var data=await res.json();
-    var updated=false;
-    (data.matches||[]).forEach(function(m){
-      if(!m.score||!m.score.ft) return;
-      var key=matchKey(m.team1,m.team2);
-      var mid=KNOCKOUT_LOOKUP[key];
-      if(!mid||picks[mid]) return;
-      var w=getWinner(m.team1,m.team2,m.score);
-      if(w){picks[mid]=w;updated=true;}
-    });
-    if(updated) render();
-  }catch(e){console.warn("Live data error:",e);}
-}
+
 
 render();
 loadLiveResults();}
@@ -468,22 +491,7 @@ function getWinner(t1,t2,score){
   return null;
 }
 
-async function loadLiveResults(){
-  try{
-    var res=await fetch("https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json");
-    var data=await res.json();
-    var updated=false;
-    (data.matches||[]).forEach(function(m){
-      if(!m.score||!m.score.ft) return;
-      var key=matchKey(m.team1,m.team2);
-      var mid=KNOCKOUT_LOOKUP[key];
-      if(!mid||picks[mid]) return;
-      var w=getWinner(m.team1,m.team2,m.score);
-      if(w){picks[mid]=w;updated=true;}
-    });
-    if(updated) render();
-  }catch(e){console.warn("Live data error:",e);}
-}
+
 
 render();
 loadLiveResults();
