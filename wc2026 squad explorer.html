@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 &#8212; Squad Explorer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a1628;color:#e8eaf0;min-height:100vh;padding:20px 12px}
+.page{max-width:680px;margin:0 auto}
+h1{text-align:center;font-size:1.3rem;font-weight:800;color:#f5c518;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.sub{text-align:center;font-size:0.75rem;color:#556677;margin-bottom:18px}
+.top-nav{display:flex;justify-content:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.nav-btn{border:1px solid #3a4a60;background:#1a2840;color:#8899aa;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:0.78rem;font-family:inherit;text-decoration:none;display:inline-block}
+.nav-btn:hover{background:#243855;color:#e8eaf0}
+
+/* search */
+.search-wrap{position:relative;margin-bottom:14px}
+.search-wrap input{width:100%;padding:12px 16px 12px 42px;border:1px solid #2a3a55;border-radius:10px;background:#111e30;color:#e8eaf0;font-size:15px;outline:none;font-family:inherit}
+.search-wrap input:focus{border-color:#f5c518}
+.search-wrap input::placeholder{color:#3a4a60}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#3a4a60;font-size:16px;pointer-events:none}
+.clear-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#3a4a60;cursor:pointer;font-size:18px;line-height:1;padding:0;display:none}
+
+/* search results */
+.search-results{margin-bottom:10px}
+.p-card{background:#111e30;border:1px solid #1e2e44;border-radius:8px;padding:10px 14px;margin-bottom:5px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.1s}
+.p-card:hover{background:#1a2840;border-color:#3a4a60}
+.p-num{font-size:0.78rem;color:#f5c518;min-width:22px;text-align:center;font-weight:700}
+.p-name{font-size:0.9rem;font-weight:600;color:#e8eaf0;flex:1}
+.p-club{font-size:0.75rem;color:#8899aa}
+.p-country{font-size:0.75rem;color:#f5c518;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.p-pos{font-size:0.6rem;padding:1px 6px;border-radius:8px;background:#0f1e30;color:#556677;border:1px solid #1e2e44;margin-left:6px}
+
+/* country grid */
+.section-label{font-size:0.62rem;font-weight:700;color:#3a4a60;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.country-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px;margin-bottom:16px}
+.c-btn{padding:9px 12px;border:1px solid #1e2e44;border-radius:8px;background:#111e30;cursor:pointer;font-size:0.82rem;color:#e8eaf0;display:flex;align-items:center;gap:8px;width:100%;font-family:inherit;transition:background 0.1s,border-color 0.1s;text-align:left}
+.c-btn:hover{background:#1a2840;border-color:#3a4a60}
+.c-btn.still-in{border-color:#1a3a20}
+.c-btn.eliminated{opacity:0.4}
+
+/* squad view */
+.squad-view{display:none}
+.sq-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.back-btn{border:1px solid #2a3a55;background:#111e30;color:#8899aa;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:0.8rem;font-family:inherit}
+.back-btn:hover{background:#1a2840}
+.sq-title{font-size:1.1rem;font-weight:700;color:#f5c518;flex:1;display:flex;align-items:center;gap:8px}
+.badge{font-size:0.65rem;padding:2px 8px;border-radius:10px}
+.badge-in{background:#0a2010;color:#55cc88;border:1px solid #1a4a28}
+.badge-out{background:#2a0a0a;color:#cc5555;border:1px solid #4a1a1a}
+
+.pos-group{margin-bottom:14px}
+.pos-title{font-size:0.6rem;font-weight:700;color:#3a4a60;text-transform:uppercase;letter-spacing:0.1em;padding:5px 0 4px;border-bottom:1px solid #1e2e44;margin-bottom:6px}
+.sq-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#111e30;border:1px solid #1e2e44;border-radius:7px;margin-bottom:4px}
+.sq-row:hover{background:#1a2840}
+.sq-num{font-size:0.9rem;font-weight:700;color:#f5c518;min-width:22px;text-align:center}
+.sq-name{flex:1;font-size:0.88rem;color:#e8eaf0}
+.sq-club{font-size:0.73rem;color:#8899aa}
+.sq-club span{background:#0f1e30;border:1px solid #1e2e44;border-radius:5px;padding:2px 8px;display:inline-block}
+
+.p-link{color:inherit;text-decoration:none;border-bottom:1px dotted #556677;}
+.p-link:hover{color:#f5c518;border-bottom-color:#f5c518;}
+.msg{text-align:center;padding:28px;color:#3a4a60;font-size:0.85rem}
+.err{text-align:center;padding:16px;color:#cc5555;font-size:0.82rem;background:#1a0808;border:1px solid #4a1a1a;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>&#x26BD; Squad Explorer</h1>
+  <p class="sub">Search any player by name, or click a country to see their full squad</p>
+  <div class="top-nav">
+    <a class="nav-btn" href="index.html">&#x2302; Home</a>
+    <a class="nav-btn" href="wc2026 bracket.html">Team Path</a>
+    <a class="nav-btn" href="wc2026 visual bracket.html">Visual Bracket</a>
+    <a class="nav-btn" href="wc2026 team stats.html">&#x1F4CA; Stats</a>
+  </div>
+
+  <div id="main-view">
+    <div class="search-wrap">
+      <span class="search-icon">&#128269;</span>
+      <input type="text" id="search" placeholder="Search player name&#8230;" autocomplete="off" spellcheck="false">
+      <button class="clear-btn" id="clear-btn">&#10005;</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+    <div class="section-label" id="grid-label">All 48 teams</div>
+    <div class="country-grid" id="country-grid"><div class="msg">Loading squad data&#8230;</div></div>
+  </div>
+
+  <div class="squad-view" id="squad-view">
+    <div class="sq-header">
+      <button class="back-btn" id="back-btn">&#8592; All teams</button>
+      <div class="sq-title" id="sq-title"></div>
+    </div>
+    <div id="sq-content"></div>
+  </div>
+</div>
+
+<script>
+var FLAGS={
+  "Mexico":"&#127474;&#127485;","South Africa":"&#127487;&#127462;","South Korea":"&#127472;&#127479;",
+  "Czech Republic":"&#127464;&#127487;","Canada":"&#127464;&#127462;",
+  "Bosnia and Herzegovina":"&#127463;&#127462;","Bosnia & Herzegovina":"&#127463;&#127462;",
+  "Qatar":"&#127478;&#127462;","Switzerland":"&#127464;&#127469;","Brazil":"&#127463;&#127479;",
+  "Morocco":"&#127474;&#127462;","Haiti":"&#127469;&#127481;",
+  "Scotland":"&#127988;&#917607;&#917602;&#917619;&#917603;&#917620;&#917631;",
+  "United States":"&#127482;&#127480;","USA":"&#127482;&#127480;","Paraguay":"&#127477;&#127486;",
+  "Australia":"&#127462;&#127482;","Turkey":"&#127481;&#127479;","Germany":"&#127465;&#127466;",
+  "Ivory Coast":"&#127464;&#127470;","Cote d'Ivoire":"&#127464;&#127470;","Ecuador":"&#127466;&#127464;",
+  "Curacao":"&#127464;&#127484;","Cura\u00e7ao":"&#127464;&#127484;",
+  "Netherlands":"&#127475;&#127473;","Japan":"&#127471;&#127477;","Sweden":"&#127480;&#127466;",
+  "Tunisia":"&#127481;&#127475;","Belgium":"&#127463;&#127466;","Egypt":"&#127466;&#127468;",
+  "Iran":"&#127470;&#127479;","New Zealand":"&#127475;&#127487;","Spain":"&#127466;&#127480;",
+  "Cape Verde":"&#127464;&#127483;","Saudi Arabia":"&#127480;&#127462;","Uruguay":"&#127482;&#127486;",
+  "France":"&#127467;&#127479;","Senegal":"&#127480;&#127475;","Iraq":"&#127470;&#127478;",
+  "Norway":"&#127475;&#127476;","Argentina":"&#127462;&#127479;","Algeria":"&#127465;&#127487;",
+  "Austria":"&#127462;&#127481;","Jordan":"&#127471;&#127476;","Portugal":"&#127477;&#127481;",
+  "DR Congo":"&#127464;&#127465;","Uzbekistan":"&#127482;&#127487;","Colombia":"&#127464;&#127476;",
+  "England":"&#127988;&#917607;&#917602;&#917605;&#917614;&#917607;&#917631;",
+  "Croatia":"&#127464;&#127479;","Ghana":"&#127468;&#127469;","Panama":"&#127477;&#127462;"
+};
+function flag(n){return FLAGS[n]||FLAGS[(n||"").replace("\u00e7","\u00e7")]||"&#127987;";}
+
+var STILL_IN = ["Canada","Brazil","Paraguay","Morocco","Norway","France","Mexico","England",
+  "Belgium","United States","Spain","Portugal","Switzerland","Egypt","Argentina","Colombia"];
+var stillInSet = {};
+STILL_IN.forEach(function(t){stillInSet[t]=true;});
+
+var allData = null; // array of {name, players:[{name,num,pos,club}]}
+
+function normTeamName(n){
+  var map={"USA":"United States","Côte d'Ivoire":"Ivory Coast","Cote d'Ivoire":"Ivory Coast",
+    "Bosnia & Herzegovina":"Bosnia and Herzegovina","Curaçao":"Curacao"};
+  return map[n]||n;
+}
+
+async function loadData(){
+  var SQUAD_URL = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.squads.json";
+  try{
+    var res = await fetch(SQUAD_URL);
+    var raw = await res.json();
+    // Handle multiple possible structures
+    var teams = raw.teams || raw.squads || raw;
+    if(!Array.isArray(teams)) teams = Object.values(teams);
+    // Normalise each team
+    allData = teams.map(function(t){
+      var name = normTeamName(t.name||t.team||t.country||"Unknown");
+      var players = (t.players||t.squad||t.roster||[]).map(function(p){
+        return {
+          name: p.name||p.player||"",
+          num:  p.num||p.number||p.shirt_number||p.jersey||"",
+          pos:  (p.pos||p.position||"").toUpperCase(),
+          club: p.club||p.club_name||p.team||""
+        };
+      });
+      return {name:name, players:players};
+    });
+    allData.sort(function(a,b){return a.name.localeCompare(b.name);});
+    buildGrid();
+  }catch(e){
+    console.error("Squad load error:",e);
+    document.getElementById("country-grid").innerHTML =
+      '<div class="err">Could not load squad data. Please try refreshing.<br><small>'+e.message+'</small></div>';
+  }
+}
+
+function buildGrid(){
+  var grid = document.getElementById("country-grid");
+  if(!allData||!allData.length){grid.innerHTML='<div class="msg">No data.</div>';return;}
+  // Sort: still in first
+  var sorted = allData.slice().sort(function(a,b){
+    var ai=stillInSet[a.name]?0:1, bi=stillInSet[b.name]?0:1;
+    if(ai!==bi) return ai-bi;
+    return a.name.localeCompare(b.name);
+  });
+  grid.innerHTML="";
+  sorted.forEach(function(t){
+    var btn=document.createElement("button");
+    btn.className="c-btn"+(stillInSet[t.name]?" still-in":" eliminated");
+    btn.dataset.team=t.name;
+    btn.innerHTML='<span style="font-size:17px">'+flag(t.name)+'</span><span>'+t.name+'</span>';
+    grid.appendChild(btn);
+  });
+}
+
+function showSearch(q){
+  var res = document.getElementById("search-results");
+  var clearBtn = document.getElementById("clear-btn");
+  var gridLabel = document.getElementById("grid-label");
+  if(!q||q.length<2){
+    res.innerHTML="";
+    clearBtn.style.display="none";
+    gridLabel.style.display="";
+    return;
+  }
+  clearBtn.style.display="block";
+  gridLabel.style.display="none";
+  if(!allData){res.innerHTML='<div class="msg">Loading&#8230;</div>';return;}
+  var hits=[];
+  allData.forEach(function(t){
+    t.players.forEach(function(p){
+      if(p.name.toLowerCase().indexOf(q.toLowerCase())>=0){
+        hits.push({p:p,team:t.name});
+      }
+    });
+  });
+  if(!hits.length){res.innerHTML='<div class="msg">No players found for "'+q+'"</div>';return;}
+  hits.sort(function(a,b){return a.p.name.localeCompare(b.p.name);});
+  var html=hits.slice(0,25).map(function(h){
+    var p=h.p,t=h.team;
+    var posMap={GK:"GK",DF:"DEF",MF:"MID",FW:"FWD"};
+    var posLabel=posMap[p.pos]||p.pos||"";
+    return '<div class="p-card" data-team="'+t+'">'
+      +'<span class="p-num">'+(p.num||"\u2014")+'</span>'
+      +'<span class="p-name"><a class="p-link" href="https://www.google.com/search?q='+encodeURIComponent(p.name+' footballer club team 2026')+'" target="_blank" onclick="event.stopPropagation()">'+p.name+'</a>'+(posLabel?'<span class="p-pos">'+posLabel+'</span>':'')+'</span>'
+      +'<span class="p-club">'+(p.club||"")+'</span>'
+      +'<span class="p-country">'+flag(t)+' '+t+'</span>'
+      +'</div>';
+  }).join("");
+  if(hits.length>25) html+='<div class="msg" style="font-size:0.75rem">Showing 25 of '+hits.length+' matches</div>';
+  res.innerHTML=html;
+}
+
+function showSquad(teamName){
+  var team=null;
+  if(allData) for(var i=0;i<allData.length;i++) if(allData[i].name===teamName){team=allData[i];break;}
+  if(!team) return;
+  document.getElementById("main-view").style.display="none";
+  document.getElementById("squad-view").style.display="block";
+  var isIn=stillInSet[teamName];
+  document.getElementById("sq-title").innerHTML=
+    flag(teamName)+" "+teamName+
+    ' <span class="badge '+(isIn?"badge-in":"badge-out")+'">'+(isIn?"Still in tournament":"Eliminated")+'</span>';
+  var players=team.players||[];
+  var groups={GK:[],DF:[],MF:[],FW:[]};
+  players.forEach(function(p){
+    var pos=p.pos||"";
+    if(pos==="GK") groups.GK.push(p);
+    else if(pos.indexOf("D")===0||pos==="CB"||pos==="RB"||pos==="LB") groups.DF.push(p);
+    else if(pos.indexOf("M")===0||pos==="CM"||pos==="DM"||pos==="AM") groups.MF.push(p);
+    else if(pos.indexOf("F")===0||pos==="ST"||pos==="CF"||pos==="LW"||pos==="RW"||pos==="AT") groups.FW.push(p);
+    else groups.MF.push(p); // default
+  });
+  ["GK","DF","MF","FW"].forEach(function(g){
+    groups[g].sort(function(a,b){return (parseInt(a.num)||99)-(parseInt(b.num)||99);});
+  });
+  var posLabels={GK:"Goalkeepers",DF:"Defenders",MF:"Midfielders",FW:"Forwards"};
+  var html="";
+  ["GK","DF","MF","FW"].forEach(function(pos){
+    if(!groups[pos].length) return;
+    html+='<div class="pos-group"><div class="pos-title">'+posLabels[pos]+'</div>';
+    groups[pos].forEach(function(p){
+      html+='<div class="sq-row">'
+        +'<span class="sq-num">'+(p.num||"\u2014")+'</span>'
+        +'<span class="sq-name"><a class="p-link" href="https://www.google.com/search?q='+encodeURIComponent(p.name+' footballer club team 2026')+'" target="_blank">'+p.name+'</a></span>'
+        +'<span class="sq-club"><span>'+(p.club||"N/A")+'</span></span>'
+        +'</div>';
+    });
+    html+='</div>';
+  });
+  if(!players.length) html='<div class="msg">No player data available for '+teamName+'.</div>';
+  document.getElementById("sq-content").innerHTML=html;
+}
+
+function goBack(){
+  document.getElementById("main-view").style.display="block";
+  document.getElementById("squad-view").style.display="none";
+}
+
+// Events
+document.getElementById("search").addEventListener("input",function(){
+  showSearch(this.value.trim());
+});
+document.getElementById("clear-btn").addEventListener("click",function(){
+  document.getElementById("search").value="";
+  showSearch("");
+  document.getElementById("search").focus();
+});
+document.getElementById("search-results").addEventListener("click",function(e){
+  var card=e.target.closest("[data-team]");
+  if(!card) return;
+  document.getElementById("search").value="";
+  showSearch("");
+  showSquad(card.dataset.team);
+});
+document.getElementById("country-grid").addEventListener("click",function(e){
+  var btn=e.target.closest("[data-team]");
+  if(btn) showSquad(btn.dataset.team);
+});
+document.getElementById("back-btn").addEventListener("click",goBack);
+
+loadData();
+</script>
+</body>
+</html>
